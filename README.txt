@@ -4,7 +4,8 @@ This is a framework for working with matrix, with the purpose of
 building a client.
 
 to use this, youll have to get your user auth token, and assign
-that to *session-user-auth*.
+that to *session-user-auth*. This can be obtained via
+(login "username" "password"). 
 
 to get started, run (initialize), which will populate the variable
 *chambers* with room data. you can look at timelines with

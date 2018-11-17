@@ -3,7 +3,8 @@
 (in-package #:matrix-framework)
 
 ;;; "matrix-framework" goes here. Hacks and glory await!
-(defparameter *session-user-auth* )
+(defparameter *session-user-auth* ""
+  "users authentication token. should be set upon login")
 
 (defparameter *chambers* nil
   "holds an alist of room ids and chamber class instances.")
@@ -176,3 +177,17 @@ therin."
 								  *session-user-auth*))))))
      (yason:parse stream :object-as :alist)))
 
+(defun login (username password)
+  (let ((stream
+	 (drakma:http-request "https://matrix.org/_matrix/client/r0/login"
+			      :want-stream t
+			      :method :post
+			      :content-type "application/json"
+			      :content (format nil "{\"type\":\"m.login.password\", \"user\":~S, \"password\":~S}"
+					       username password)
+			      ;; :additional-headers
+			      ;; `(("Authorization" . ,(concatenate 'string "Bearer "
+			      ;; 					 *session-user-auth*)))
+			      )))
+    (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
+    (yason:parse stream :object-as :alist)))
