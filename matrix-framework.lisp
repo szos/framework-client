@@ -3,20 +3,29 @@
 (in-package #:matrix-framework)
 
 ;;; "matrix-framework" goes here. Hacks and glory await!
-(defparameter *session-user-auth* ""
+(defparameter *session-user-auth* nil
   "users authentication token. should be set upon login")
+
+(defparameter *device-id* nil
+  "devices id, used to differentiate between devices. currently resets
+on every login.")
+
+(defparameter *user-address* nil
+  "users address, eg @username:matrix.org.")
 
 (defparameter *chambers* nil
   "holds an alist of room ids and chamber class instances.")
+
 (defparameter *settings* nil)
+
 (defparameter *sync-batch-token* nil
   "holds the batch token, which tells us how much to sync. need to implement
 a pagination function. ")
 (defparameter *homeserver* "https://matrix.org/"
   "holds the homeserver string. set upon login, then should be locked. ")
 
-(defun cat (&rest strs)
-  (concatenate 'string strs))
+(defmacro cat (&rest strs)
+  `(concatenate 'string ,@strs))
 
 (defun paginate (path &key (to nil) (from nil) (limit nil) (dir nil))
   "returns a string for paginating based on what was sent in. "
@@ -153,41 +162,35 @@ therin."
 									*session-user-auth*))))))
     (yason:parse stream :object-as :alist)))
 
-(defmacro send-json-macro (url content &rest (key-plist nil key-plist-provided-p))
-  `(let ((stream (http-request ,url
-			       :want-stream t
-			       :method :post
-			       :content-type "application/json"
-			       :content ,content
-			       ,(when key-plist-provided-p
-				  key-plist)
-			       :additional-headers
-			       '(("Authorization" . ,(concatenate 'string "Bearer "
-								  *session-user-auth*))))))
-     (yason:parse stream :object-as :alist)))
-
-(defmacro recieve-json-macro (url &rest (key-plist nil key-plist-provided-p))
-  `(let ((stream (http-request ,url
-			       :want-stream t
-			       :method :get
-			       ,(when key-plist-provided-p
-				  key-plist)
-			       :additional-headers
-			       '(("Authorization" . ,(concatenate 'string "Bearer "
-								  *session-user-auth*))))))
-     (yason:parse stream :object-as :alist)))
-
 (defun login (username password)
-  (let ((stream
-	 (drakma:http-request "https://matrix.org/_matrix/client/r0/login"
-			      :want-stream t
-			      :method :post
-			      :content-type "application/json"
-			      :content (format nil "{\"type\":\"m.login.password\", \"user\":~S, \"password\":~S}"
-					       username password)
-			      ;; :additional-headers
-			      ;; `(("Authorization" . ,(concatenate 'string "Bearer "
-			      ;; 					 *session-user-auth*)))
-			      )))
-    (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
-    (yason:parse stream :object-as :alist)))
+  "generates an authentication token by logging in, if no token is found. 
+otherwise logs out and then back in. "
+  (if (not *session-user-auth*)
+      (let* ((data (let ((stream
+			  (drakma:http-request "https://matrix.org/_matrix/client/r0/login"
+					       :want-stream t
+					       :method :post
+					       :content-type "application/json"
+					       :content (format nil "{\"type\":\"m.login.password\", \"user\":~S, \"password\":~S, \"device_id\":\"SBCLclient\"}"
+								username password)
+					       
+					       )))
+		     (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
+		     (yason:parse stream :object-as :alist)))
+	     (token (cdr (assoc "access_token" data :test #'string=)))
+	     (device-id (cdr (assoc "device_id" data :test #'string=)))
+	     (user-id (cdr (assoc "user_id" data :test #'string=))))
+	(setf *session-user-auth* token)
+	(setf *device-id* device-id)
+	(setf *user-address* user-id))
+      (progn
+	(logout)
+	(login username password))))
+
+(defun logout ()
+  (recieve-json (cat *homeserver* "_matrix/client/r0/logout"))
+  (setf *session-user-auth* nil)
+    (setf *device-id* nil)
+    (setf *user-address* nil))
+
+
