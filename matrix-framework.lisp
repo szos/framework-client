@@ -3,7 +3,8 @@
 (in-package #:matrix-framework)
 
 ;;; "matrix-framework" goes here. Hacks and glory await!
-(defparameter *session-user-auth* "MDAxOGxvY2F0aW9uIG1hdHJpeC5vcmcKMDAxM2lkZW50aWZpZXIga2V5CjAwMTBjaWQgZ2VuID0gMQowMDIzY2lkIHVzZXJfaWQgPSBAc3pvczptYXRyaXgub3JnCjAwMTZjaWQgdHlwZSA9IGFjY2VzcwowMDIxY2lkIG5vbmNlID0gMjhmR3ZHS2NFeEh4MFNFVAowMDJmc2lnbmF0dXJlID_IFoP5V3QWN3bq14DrV-W-PjCnXxG8tme8dGOFQEztCg")
+(defparameter *session-user-auth* )
+
 (defparameter *chambers* nil
   "holds an alist of room ids and chamber class instances.")
 (defparameter *settings* nil)

@@ -1,8 +1,12 @@
 * heres some notes about the way matrix works:
 
+
 * timeline
   possible timeline events include
   1. m.room.message
   2. m.room.member
 
 
+
+
+session auth: "MDAxOGxvY2F0aW9uIG1hdHJpeC5vcmcKMDAxM2lkZW50aWZpZXIga2V5CjAwMTBjaWQgZ2VuID0gMQowMDIzY2lkIHVzZXJfaWQgPSBAc3pvczptYXRyaXgub3JnCjAwMTZjaWQgdHlwZSA9IGFjY2VzcwowMDIxY2lkIG5vbmNlID0gMjhmR3ZHS2NFeEh4MFNFVAowMDJmc2lnbmF0dXJlID_IFoP5V3QWN3bq14DrV-W-PjCnXxG8tme8dGOFQEztCg"
