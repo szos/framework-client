@@ -3,6 +3,11 @@
 ;;; what i want is a timeline, to be then printed like so:
 ;;; timestamp user: message
 
+;;; what we have now is:
+;;; user says:
+;;;     message
+;;; ------------- (for 80 characters. we assume minimum of 80 character display)
+
 (defun display-room-events-list (list-of-formatted-events)
   (loop for event in list-of-formatted-events
      do
@@ -56,4 +61,3 @@ text. "
 		(when (string= "m.text" (cdr (assoc "msgtype" content :test #'string=)))
 		  (cdr (assoc "body" content :test #'string=))))))
     (format nil "~a says:~%    ~a" sender text)))
-
