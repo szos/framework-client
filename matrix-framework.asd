@@ -9,5 +9,7 @@
                #:flexi-streams
                #:yason)
   :components ((:file "package")
-               (:file "matrix-framework")))
+               (:file "matrix-framework")
+	       (:file "parse-timeline,etc.lisp")
+	       (:file "parse-chambers.lisp")))
 

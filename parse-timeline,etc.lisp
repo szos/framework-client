@@ -17,6 +17,7 @@
        (terpri)))
 
 (defun get-events-from-timeline (timeline)
+  "takes a timeline and returns the 'events' portion of the timeline"
   (let ((events (assoc "events" (rest timeline) :test #'string=)))
     events))
 
@@ -24,7 +25,9 @@
   "takes a list of events, and returns a list of strings, one for each event, 
 that are ready to be displayed. 
 
-currently only the m.room.message types of messages are working"
+currently only 
+m.room.message, m.room.member, 
+ types of messages are working"
   (when (stringp (car list-of-events))
     (setf list-of-events (rest list-of-events)))
   (mapcar #'parse-single-event list-of-events))
