@@ -1,0 +1,8 @@
+* heres some notes about the way matrix works:
+
+* timeline
+  possible timeline events include
+  1. m.room.message
+  2. m.room.member
+
+
