@@ -3,6 +3,11 @@ This is the stub README.txt for the "matrix-framework" project.
 This is a framework for working with matrix, with the purpose of
 building a client.
 
+To get started, grab emacs and slime, install sbcl, and quicklisp.
+Or use your favorite edior, as long as theres a way to connect to
+swank through it. you probably dont want to be doing this from a
+terminal repl. 
+
 to use this, youll have to get your user auth token, and assign
 that to *session-user-auth*. This can be obtained via
 (login "username" "password"). Currently, it can only log in to

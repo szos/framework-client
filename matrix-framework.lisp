@@ -27,7 +27,7 @@ a pagination function. ")
 (defmacro cat (&rest strs)
   `(concatenate 'string ,@strs))
 
-(defun paginate (path &key (to nil) (from nil) (limit nil) (dir nil))
+(defun paginate (&key (to nil) (from nil) (limit nil) (dir nil))
   "returns a string for paginating based on what was sent in. "
   (when (or to from limit dir)
     (cat (when from
@@ -40,8 +40,7 @@ a pagination function. ")
 	   (format nil "&dir=~A" dir)))))
 
 (defun aquire-public-rooms (&optional (paginate nil))
-  (recieve-json (cat *homeserver* "_matrix/client/r0/publicRooms"
-		     )))
+  (recieve-json (cat *homeserver* "_matrix/client/r0/publicRooms")))
 
 (defun post-room-to-directory ())
 
@@ -49,7 +48,7 @@ a pagination function. ")
   (multiple-value-bind (next-batch chambers) ;; account)
       (parse-sync (if data-provided-p
 		      data
-		      (sync-general)))
+		      (sync-general "_matrix/client/r0/sync?")))
     (setf *chambers* chambers)
     ;; (setf *settings* account)
     (setf *sync-batch-token* (cdr next-batch))))
@@ -63,9 +62,10 @@ a pagination function. ")
     ;; 	 )
     (values next-batch room-list)))
 
-(defun sync-general (&key (since nil) (filter nil) (full-state nil)
-		       (presence nil) (timeout nil))
-  (recieve-json (concatenate 'string *homeserver* "_matrix/client/r0/sync?"
+;;"_matrix/client/r0/sync?"
+(defun sync-general (api &key (since nil) (filter nil) (full-state nil)
+		       (presence nil) (timeout nil) (additional nil))
+  (recieve-json (concatenate 'string *homeserver* api
 			  (when since
 			    (concatenate 'string "&since=" since))
 			  (when filter
@@ -75,11 +75,13 @@ a pagination function. ")
 			  (when presence
 			    (concatenate 'string "&set_presence=" presence))
 			  (when timeout
-			    (concatenate 'string "&timeout=" timeout)))))
+			    (concatenate 'string "&timeout=" timeout))
+			  (when additional
+			    (format nil "~A" additional)))))
 
 (defun sync-again ()
   (multiple-value-bind (batch chambers) ;;acct)
-      (parse-sync (sync-general :since *sync-batch-token*))
+      (parse-sync (sync-general "_matrix/client/r0/sync?" :since *sync-batch-token*))
     (setf *sync-batch-token* (cdr batch))
     ;; (setf *settings* acct ;;(update-acct acct)
     ;; 	  )
@@ -192,5 +194,3 @@ otherwise logs out and then back in. "
   (setf *session-user-auth* nil)
     (setf *device-id* nil)
     (setf *user-address* nil))
-
-
