@@ -45,13 +45,19 @@ a pagination function. ")
 (defun post-room-to-directory ())
 
 (defun initialize (&optional (data nil data-provided-p))
+  "this initializes our dataset. calling generate-names takes about 1.5x-2x 
+longer than the general sync api. this is probably because generate names
+is calling the name-getting api for every room. "
   (multiple-value-bind (next-batch chambers) ;; account)
       (parse-sync (if data-provided-p
 		      data
 		      (sync-general "_matrix/client/r0/sync?")))
     (setf *chambers* chambers)
     ;; (setf *settings* account)
-    (setf *sync-batch-token* (cdr next-batch))))
+    (setf *sync-batch-token* (cdr next-batch)))
+  (init-*join-rooms*)
+  (print "Initial sync completed, obtaining room names...") 
+  (generate-names))
 
 (defun parse-sync (sync-data)
   (let ((room-list (assoc "rooms" sync-data :test #'string=))
@@ -194,3 +200,4 @@ otherwise logs out and then back in. "
   (setf *session-user-auth* nil)
     (setf *device-id* nil)
     (setf *user-address* nil))
+

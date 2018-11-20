@@ -11,5 +11,6 @@
   :components ((:file "package")
                (:file "matrix-framework")
 	       (:file "parse-timeline,etc")
-	       (:file "parse-chambers")))
+	       (:file "parse-chambers")
+	       (:file "navigate-rooms")))
 

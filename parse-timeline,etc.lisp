@@ -21,6 +21,16 @@
   (let ((events (assoc "events" (rest timeline) :test #'string=)))
     events))
 
+(defun get-timeline-from-room (room)
+  "takes a room and returns the timeline. example usage is
+"
+  ;; (parse-timeline-events
+  ;;  (get-events-from-timeline 
+  ;;   (get-timeline-from-room (grab-single-room name))))
+  (when (stringp (car room))
+    (setf room (cdr room)))
+  (assoc "timeline" room :test #'string=))
+
 (defun parse-timeline-events (list-of-events)
   "takes a list of events, and returns a list of strings, one for each event, 
 that are ready to be displayed. 
