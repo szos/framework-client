@@ -56,7 +56,8 @@ is calling the name-getting api for every room. "
     ;; (setf *settings* account)
     (setf *sync-batch-token* (cdr next-batch)))
   (init-*join-rooms*)
-  (print "Initial sync completed, obtaining room names...") 
+  (princ "Initial sync completed, obtaining room names...")
+  (terpri)
   (generate-names))
 
 (defun parse-sync (sync-data)
@@ -185,19 +186,35 @@ otherwise logs out and then back in. "
 					       )))
 		     (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
 		     (yason:parse stream :object-as :alist)))
+	     
 	     (token (cdr (assoc "access_token" data :test #'string=)))
 	     (device-id (cdr (assoc "device_id" data :test #'string=)))
 	     (user-id (cdr (assoc "user_id" data :test #'string=))))
+	;; prepare for kludge
+	(when (equal (car data) '("error" . "Invalid password"))
+	  (return-from login :invalid-credentials))
 	(setf *session-user-auth* token)
 	(setf *device-id* device-id)
 	(setf *user-address* user-id))
-      (progn
+      (progn ;; if user is logged in, logout, and then login under new user.
 	(logout)
 	(login username password))))
 
 (defun logout ()
   (recieve-json (cat *homeserver* "_matrix/client/r0/logout"))
   (setf *session-user-auth* nil)
-    (setf *device-id* nil)
-    (setf *user-address* nil))
+  (setf *device-id* nil)
+  (setf *user-address* nil)
+  :logged-out)
 
+;;; create a list of rooms,
+;;; translate that list of rooms into a list of rooms, with their appropriate
+;;; parameters stored logically! for example: 
+
+;; ((rooom-name (state
+;; 	      (general-state-variables . values))
+;; 	     (timeline
+;; 	      (timeline-events . whatever-figure-value-later))
+;; 	     (etc
+;; 	      (etcetc . etcetcetc)))
+;;  (room-name (..)))

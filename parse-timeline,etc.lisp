@@ -50,7 +50,8 @@ side effects, as its calling a function that will change some data. "
 	(type (cdr (assoc "type" event :test #'string=))))
     ;; (update-room unsigned) ;; this should check for 'replaces_state' among others and update the room to reflect any changes.
     (when (string= type "m.room.redaction")
-      (print type))
+      (princ type)
+      (terpri))
     (cond ((string= type "m.room.message")
 	   (format-message-event event))
 	  ((string= type "m.room.member")

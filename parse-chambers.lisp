@@ -12,7 +12,7 @@
   (loop for room in list-of-rooms-w/-formatted-events
      do
        (princ "Room ID:  ")
-       (print (car room))
+       (princ (car room))
        (terpri)
        (loop for event in (cadr room)
 	  do
@@ -38,17 +38,36 @@
     ))
 
 (defun parse-all-timelines (room+timeline-list)
-  "this takes in a list of lists, structured as so:
-((\"room-id\" (timeline...))
- (\"room-id\" (timeline...))) 
-and returns every timeline parsed via parse-timeline-events."
+  "this takes in a list of lists, structured as so:"
+;; ((\"room-id\" (timeline...))
+;;  (\"room-id\" (timeline...))) 
+;; and returns every timeline parsed via parse-timeline-events.
   (mapcar #'(lambda (tl)
 		(let ((room-id (car tl))
 		      (line (cdadr tl)))
 		  (list room-id (parse-timeline-events
 				 (get-events-from-timeline line)))))
-	    room+timeline-list))
+	  room+timeline-list))
 
-;; example function line:
-;; (get-events-from-timeline (parse-all-timelines ))
+(defun translate-chambers (&optional (chambers *join-rooms*))
+  (mapcar #'translate-room chambers))
 
+(defun translate-room (room)
+  (let ((room-name (get-room-name-from-id (car room)))
+	(state-variables (mapcar #'gather-state-variables
+				 (cdr (assoc "events" (cdr (assoc "state" room :test #'string=))
+					     :test #'string=))))
+	(timeline-events (mapcar #'gather-timeline-events
+				 (cdr (assoc "events" (cdr (assoc "timeline" room :test #'string=))
+					     :test #'string=)))))
+    `(,room-name
+      (state
+       ,state-variables)
+      (timeline
+       ,timeline-events))))
+
+(defun gather-state-variables (state-events)
+  (let ((members nil)
+	(join-rules nil))
+    ;
+    ))

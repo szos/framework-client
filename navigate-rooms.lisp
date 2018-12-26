@@ -40,7 +40,8 @@ into the table of names"
 	     (state-events (cdadr (assoc "state" (cdr room) :test #'string=))))
 	 (loop for event in state-events
 	    do
-	      ()))))
+	      (princ "test")
+	      (terpri)))))
 
 (defun search-for-room.name (events-list)
   (when (stringp (car events-list))
@@ -66,13 +67,17 @@ proper room. "
   (let ((room-id (if id
 		     id
 		     (get-room-id-from-name room-name))))
-    (print room-id)
+    (princ room-id)
+    (terpri)
     (terpri)
     (find-room room-id)))
 
 (defun get-room-id-from-name (name &optional (db *room-name->id*))
   "looks up the room id from a name in the database 'db'"
   (cdr (assoc name db :test #'string=)))
+
+(defun get-room-name-from-id (id &optional (db *room-id->name*))
+  (cdr (assoc id db :test #'string=)))
 
 (defun find-room (room-id &optional (room-list *join-rooms*))
   "takes a room id, and iterates over a list of rooms, returning

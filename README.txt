@@ -29,9 +29,9 @@ functions may change, or made obsolete.
 
 example usage from the repl:
 
-matrix-framework> (initialize)
-matrix-framework> (parse-all-timelines (get-room-timelines-from-*chambers*))
-wait some time
+matrix-framework> (smart-login)
+;; at this point i clear the repl with C-c M-o, as your username and passsword
+;; are visible. 
 matrix-framework> (initialize)
 matrix-framework> (parse-all-timelines (get-room-timelines-from-*chambers*))
 wait some time

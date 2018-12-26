@@ -12,5 +12,6 @@
                (:file "matrix-framework")
 	       (:file "parse-timeline,etc")
 	       (:file "parse-chambers")
-	       (:file "navigate-rooms")))
+	       (:file "navigate-rooms")
+	       (:file "auth")))
 
