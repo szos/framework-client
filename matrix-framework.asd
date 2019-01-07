@@ -7,11 +7,13 @@
   :serial t
   :depends-on (#:drakma
                #:flexi-streams
-               #:yason)
+               #:yason
+	       #:clim-lisp)
   :components ((:file "package")
                (:file "matrix-framework")
 	       (:file "parse-timeline,etc")
 	       (:file "parse-chambers")
 	       (:file "navigate-rooms")
-	       (:file "auth")))
+	       (:file "auth")
+	       (:file "interact")))
 

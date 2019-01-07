@@ -1,5 +1,7 @@
 ;;;; package.lisp
 
 (defpackage #:matrix-framework
-  (:use #:cl))
+  (:use  #:cl
+   ;;#:clim-lisp
+	))
 

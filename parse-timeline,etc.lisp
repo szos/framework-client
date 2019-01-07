@@ -8,13 +8,39 @@
 ;;;     message
 ;;; ------------- (for 80 characters. we assume minimum of 80 character display)
 
+(defun deal-with-newlines (formatted-event)
+  (if (search "
+" formatted-event)
+      (cat (subseq formatted-event 0 (+ 1 (search "
+" formatted-event)))
+	   "  "
+	   (subseq formatted-event (+ 1 (search "
+" formatted-event))))
+      formatted-event))
+
 (defun display-room-events-list (list-of-formatted-events)
-  (loop for event in list-of-formatted-events
-     do
-       (princ event)
-       (terpri)
-       (princ "--------------------------------------------------------------------------------")
-       (terpri)))
+  (let ((previous-speaker "")
+	(current-speaker ""))
+    (when (search "says:" (car list-of-formatted-events))
+      (setf previous-speaker
+	    (subseq (car list-of-formatted-events)
+		    0 (search "says:" (car list-of-formatted-events)))))
+    (print (car list-of-formatted-events))
+    (terpri)
+    (loop for event in (rest list-of-formatted-events)
+       do
+	 (when (search "says:" event)
+	   (setf current-speaker
+		 (subseq event 0 (search "says:" event)))
+	   (if (string= current-speaker previous-speaker)
+	       (setf event (subseq event (+ (search "says:" event)
+					    6)))
+	       (setf previous-speaker current-speaker)))
+	 (princ event)
+	 (terpri)
+       ;; (princ "--------------------------------------------------------------------------------")
+       ;; (terpri)
+	 )))
 
 (defun get-events-from-timeline (timeline)
   "takes a timeline and returns the 'events' portion of the timeline"
@@ -43,10 +69,15 @@ m.room.message, m.room.member,
   (mapcar #'parse-single-event list-of-events))
 
 (defun parse-single-event (event)
+  ;; This needs to be reworked using clos maybe, as its getting to the point of a giant
+  ;; dispatch table where we have to manually add things to it to get new behaviour.
+  ;; instead we could use dynamic dispatch so people could just grab the methods and
+  ;; everything for general events when implementing a new event type through
+  ;; inheritance. 
   "takes in one event, and returns that event formatted and ready for displaying. 
 it also updates the room, based on the 'unsigned' portion of the event. this means
 side effects, as its calling a function that will change some data. "
-  (let ((unsigned (cdr (assoc "unsigned" event :test #'string=)))
+  (let (;;(unsigned (cdr (assoc "unsigned" event :test #'string=)))
 	(type (cdr (assoc "type" event :test #'string=))))
     ;; (update-room unsigned) ;; this should check for 'replaces_state' among others and update the room to reflect any changes.
     (when (string= type "m.room.redaction")
@@ -75,8 +106,18 @@ side effects, as its calling a function that will change some data. "
      	  
 	  ((string= (subseq type 0 7) "m.call.")
 	   (format-call-events event))
+	  ((string= type "m.room.create")
+	   (format-room-create event))
+	  ((preview-url-p type)
+	   (format-room-preview-url event))
 	  (t 
 	   "this message type has not been implemented"))))
+
+(defun preview-url-p (type)
+  (let ((strstrt (search "room.preview_urls" type)))
+    (if strstrt
+	t
+	nil)))
 
 (defun format-member-event (event)
   "takes in an event of type m.room.member and formats it, returning the formatted text"
@@ -93,15 +134,19 @@ side effects, as its calling a function that will change some data. "
 text. "
   (let ((sender (cdr (assoc "sender" event :test #'string=)))
 	(text (let ((content (cdr (assoc "content" event :test #'string=))))
-		(when (string= "m.text" (cdr (assoc "msgtype" content :test #'string=)))
-		  (cdr (assoc "body" content :test #'string=))))))
-    (format nil "~a says:~%    ~a" sender text)))
+		(cond ((string= "m.text" (cdr (assoc "msgtype" content :test #'string=)))
+		       (cdr (assoc "body" content :test #'string=)))
+		      ((string= "m.image" (cdr (assoc "msgtype" content :test #'string=)))
+		       (format nil "Image link: ~A" (cdr (assoc "url" content :test #'string=))))
+		      (t
+		       "unknown msgtype")))))
+    (format nil "~a says:~%  ~a" sender (deal-with-newlines text))))
 
 (defun format-encrypted-event (event)
   "takes an event of type m.room.encrypted, and returns it formatted. if the client 
 has the keys, it will decrypt the message. otherwise it says its cipher text / encrypted."
   (let ((sender (cdr (assoc "sender" event :test #'string=))))
-    (format nil "~A says:~%    encryption is not yet implemented." sender)))
+    (format nil "~A says:~%  encryption is not yet implemented." sender)))
 
 (defun format-redacted-event (event)
   "takes a redaction message. it should replace the text of the referenced event with
@@ -154,3 +199,18 @@ like format-room-name&"
 (defun format-room-avatar (event)
   (let ((sender (cdr (assoc "sender" event :test #'string=))))
     (format nil "~A changed their avatar" sender)))
+
+(defun format-room-create (event)
+  (let ((creator (cdr (assoc "creator" (cdr (assoc "content" event :test #'string=))
+			     :test #'string=)))
+	(version (cdr (assoc "room_version" (cdr (assoc "content" event :test #'string=))
+			     :test #'string=))))
+    (format nil "~A created the room. Room version is ~A." creator version)))
+
+(defun format-room-preview-url (event)
+  (let ((disable (cdr (assoc "disable" (cdr (assoc "content" event :test #'string=))
+			     :test #'string=))))
+    (format nil "URL previews are ~A for this room, but this client doesnt support them"
+	    (if (eq t disable)
+		"enabled"
+		"disabled"))))

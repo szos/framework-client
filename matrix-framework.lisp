@@ -60,6 +60,18 @@ is calling the name-getting api for every room. "
   (terpri)
   (generate-names))
 
+(defun refresh (&optional (data nil data-provided-p))
+  (multiple-value-bind (next-batch chambers) ;; account)
+      (parse-sync (if data-provided-p
+		      data
+		      (sync-general "_matrix/client/r0/sync?")))
+    (setf *chambers* chambers)
+    ;; (setf *settings* account)
+    (init-*join-rooms*)
+    (setf *sync-batch-token* (cdr next-batch))))
+
+
+
 (defun parse-sync (sync-data)
   (let ((room-list (assoc "rooms" sync-data :test #'string=))
 	(next-batch (assoc "next_batch" sync-data :test #'string=))

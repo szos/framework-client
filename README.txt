@@ -13,14 +13,16 @@ that to *session-user-auth*. This can be obtained via
 (login "username" "password"). Currently, it can only log in to
 the matrix homeserver. the client has a device id of SBCLclient.
 
-to get started, run (initialize), which will populate the variable
-*chambers* with room data. you can look at timelines with
-(parse-all-timelines (get-room-timelines-from-*chambers*)). This will
-return a list formed like so: '((room-id (messages))
-       	      	     	      	(room-id (messages)))
-which should be ready for printing. the messages that havent been
-implemented will print "this message type has not been implemented"
-as a placeholder
+this client has a device id of SBCLclient. this client can only
+log in to the matrix homeserver by default, but you can set the
+homeserver variable to your own server. 
+
+to get started, run the test repl with (test-repl). on running this
+function youll be asked to login. The client doesnt censor this, so
+you should execute some commands, maybe initialize, and then use
+C-c M-o to clear slime. you can list commands with the command
+print-commands. the messages that havent been implemented yet will
+print "this message type has not been implemented" as a placeholder. 
 
 
 everything is very rough at this point (16/11/2018) and nothing is set in stone,

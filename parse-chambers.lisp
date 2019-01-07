@@ -1,12 +1,12 @@
 (in-package :matrix-framework)
 
-(defun display-room-events-list (list-of-formatted-events)
-  (loop for event in list-of-formatted-events
-     do
-       (princ event)
-       (terpri)
-       (princ "--------------------------------------------------------------------------------")
-       (terpri)))
+;; (defun display-room-events-list (list-of-formatted-events)
+;;   (loop for event in list-of-formatted-events
+;;      do
+;;        (princ event)
+;;        (terpri)
+;;        (princ "--------------------------------------------------------------------------------")
+;;        (terpri)))
 
 (defun display-all-rooms-events-list (list-of-rooms-w/-formatted-events)
   (loop for room in list-of-rooms-w/-formatted-events
@@ -53,13 +53,28 @@
   (mapcar #'translate-room chambers))
 
 (defun translate-room (room)
+  "takes a room WITH an ID
+then it.... does something? what? idk.  
+well, its called from translate-chambers, and takes a single room. it
+translates this room into its formatted counterpart, and stores it
+in a variable. "
+  ;; (when (stringp (car room)) ;; strip the name/id from the room. 
+  ;;   (setf room (cdr room)))
   (let ((room-name (get-room-name-from-id (car room)))
 	(state-variables (mapcar #'gather-state-variables
-				 (cdr (assoc "events" (cdr (assoc "state" room :test #'string=))
-					     :test #'string=))))
+				 (cdr (assoc
+				       "events"
+				       (cdr (assoc
+					     "state"
+					     (rest room)
+					     :test #'string=))
+				       :test #'string=))))
 	(timeline-events (mapcar #'gather-timeline-events
-				 (cdr (assoc "events" (cdr (assoc "timeline" room :test #'string=))
-					     :test #'string=)))))
+				 (cdr (assoc "events" (cdr
+						       (assoc "timeline"
+							      (rest room)
+							      :test #'string=))
+					     :test #'string=))))) ;; grab the events from the timeline
     `(,room-name
       (state
        ,state-variables)
@@ -69,5 +84,32 @@
 (defun gather-state-variables (state-events)
   (let ((members nil)
 	(join-rules nil))
-    ;
     ))
+
+(defun gather-timeline-events (timeline-event)
+  (let ((type (cdr (assoc "type" event :test #'string=))))
+    (cond ((string= type "m.room.message")
+	   (format-message-event event))
+	  ((string= type "m.room.member")
+	   (format-member-event event))
+	  ((string= type "m.room.encrypted")
+	   (format-encrypted-event event))
+	  ((string= type "m.room.redaction")
+	   (format-redacted-event event))
+	  ((string= type "m.room.history_visibility")
+	   (format-room-history-visible& event))
+	  ((string= type "m.room.guest_access")
+	   (format-room-guest-access& event))
+	  ((string= type "m.room.name")
+	   (format-room-name& event))
+	  ((string= type "m.room.power_levels")
+	   (format-room-power-levels& event))
+	  ((string= type "m.room.join_rules")
+	   (format-room-join-rules& event))
+	  ((string= type "m.room.avatar")
+	   (format-room-avatar event))
+     	  
+	  ((string= (subseq type 0 7) "m.call.")
+	   (format-call-events event))
+	  (t 
+	   "this message type has not been implemented"))))

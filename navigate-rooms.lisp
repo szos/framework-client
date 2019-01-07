@@ -87,3 +87,5 @@ the one with a matching ID. "
        (when (string= (car room) room-id)
 	 (return-from find-room room))))
 
+()
+
