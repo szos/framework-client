@@ -1,7 +1,8 @@
 ;;;; package.lisp
 
 (defpackage #:matrix-framework
-  (:use  #:cl
-   ;;#:clim-lisp
-	))
+  (:use  #:cl)
+  (:export :initialize*
+	   :view-room*
+	   ))
 

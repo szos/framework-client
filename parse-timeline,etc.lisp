@@ -66,7 +66,83 @@ m.room.message, m.room.member,
  types of messages are working"
   (when (stringp (car list-of-events))
     (setf list-of-events (rest list-of-events)))
-  (mapcar #'parse-single-event list-of-events))
+  (let ((formatted-events-list (mapcar #'parse-single-event list-of-events)))
+    formatted-events-list))
+
+(defun parse-timeline-events* (list-of-events)
+  "takes a list of events, and returns a list of strings, one for each event, 
+that are ready to be displayed. 
+
+currently only 
+m.room.message, m.room.member, 
+ types of messages are working"
+  (when (stringp (car list-of-events))
+    (setf list-of-events (rest list-of-events)))
+  (let ((sender.event (mapcar #'parse-single-event list-of-events))
+	(last-sender ""))
+    (mapcar #'(lambda (event)
+		(if (string= (car event) last-sender)
+		    (values nil (cdr event))
+		    (values (car event) (cdr event))))
+	    sender.event)))
+
+(defun parse-timeline-evnts* (list-of-events)
+  (when (stringp (car list-of-events))
+    (setf list-of-events (rest list-of-events)))
+  (let ((last-sender "")
+	(list-to-be-reversed nil))
+    (mapcar #'(lambda (event)
+		(let ((sender (cdr (assoc "sender" event :test #'string=)))))
+		(if (string= last-sender sender)
+		    (setf list-to-be-reversed (cons list-to-be-reversed )))))))
+
+(defun parse-single-event* (event)
+  ;; This needs to be reworked using clos maybe, as its getting to the point of a giant
+  ;; dispatch table where we have to manually add things to it to get new behaviour.
+  ;; instead we could use dynamic dispatch so people could just grab the methods and
+  ;; everything for general events when implementing a new event type through
+  ;; inheritance. 
+  "takes in one event, and returns that event formatted and ready for displaying. 
+it also updates the room, based on the 'unsigned' portion of the event. this means
+side effects, as its calling a function that will change some data. "
+  (let (;;(unsigned (cdr (assoc "unsigned" event :test #'string=)))
+	(type (cdr (assoc "type" event :test #'string=)))
+	(sender (cdr (assoc "sender" event :test #'string=))))
+    ;; (update-room unsigned) ;; this should check for 'replaces_state' among others and update the room to reflect any changes.
+    (when (string= type "m.room.redaction")
+      (princ type)
+      (terpri))
+    ;; this is a giant static dispatch... BAD! rewrite to actually make use of CLOS...
+    (values sender
+     (cond ((string= type "m.room.message")
+	    (format-message-event event))
+	   ((string= type "m.room.member")
+	    (format-member-event event))
+	   ((string= type "m.room.encrypted")
+	    (format-encrypted-event event))
+	   ((string= type "m.room.redaction")
+	    (format-redacted-event event))
+	   ((string= type "m.room.history_visibility")
+	    (format-room-history-visible& event))
+	   ((string= type "m.room.guest_access")
+	    (format-room-guest-access& event))
+	   ((string= type "m.room.name")
+	    (format-room-name& event))
+	   ((string= type "m.room.power_levels")
+	    (format-room-power-levels& event))
+	   ((string= type "m.room.join_rules")
+	    (format-room-join-rules& event))
+	   ((string= type "m.room.avatar")
+	    (format-room-avatar event))
+     	   
+	   ((string= (subseq type 0 7) "m.call.")
+	    (format-call-events event))
+	   ((string= type "m.room.create")
+	    (format-room-create event))
+	   ((preview-url-p type)
+	    (format-room-preview-url event))
+	   (t 
+	    "this message type has not been implemented")))))
 
 (defun parse-single-event (event)
   ;; This needs to be reworked using clos maybe, as its getting to the point of a giant
@@ -78,40 +154,43 @@ m.room.message, m.room.member,
 it also updates the room, based on the 'unsigned' portion of the event. this means
 side effects, as its calling a function that will change some data. "
   (let (;;(unsigned (cdr (assoc "unsigned" event :test #'string=)))
-	(type (cdr (assoc "type" event :test #'string=))))
+	(type (cdr (assoc "type" event :test #'string=)))
+	;;(sender (cdr (assoc "sender" event :test #'string=)))
+	)
     ;; (update-room unsigned) ;; this should check for 'replaces_state' among others and update the room to reflect any changes.
     (when (string= type "m.room.redaction")
       (princ type)
       (terpri))
+    ;; this is a giant static dispatch... BAD! rewrite to actually make use of CLOS...
     (cond ((string= type "m.room.message")
-	   (format-message-event event))
-	  ((string= type "m.room.member")
-	   (format-member-event event))
-	  ((string= type "m.room.encrypted")
-	   (format-encrypted-event event))
-	  ((string= type "m.room.redaction")
-	   (format-redacted-event event))
-	  ((string= type "m.room.history_visibility")
-	   (format-room-history-visible& event))
-	  ((string= type "m.room.guest_access")
-	   (format-room-guest-access& event))
-	  ((string= type "m.room.name")
-	   (format-room-name& event))
-	  ((string= type "m.room.power_levels")
-	   (format-room-power-levels& event))
-	  ((string= type "m.room.join_rules")
-	   (format-room-join-rules& event))
-	  ((string= type "m.room.avatar")
-	   (format-room-avatar event))
-     	  
-	  ((string= (subseq type 0 7) "m.call.")
-	   (format-call-events event))
-	  ((string= type "m.room.create")
-	   (format-room-create event))
-	  ((preview-url-p type)
-	   (format-room-preview-url event))
-	  (t 
-	   "this message type has not been implemented"))))
+	    (format-message-event event))
+	   ((string= type "m.room.member")
+	    (format-member-event event))
+	   ((string= type "m.room.encrypted")
+	    (format-encrypted-event event))
+	   ((string= type "m.room.redaction")
+	    (format-redacted-event event))
+	   ((string= type "m.room.history_visibility")
+	    (format-room-history-visible& event))
+	   ((string= type "m.room.guest_access")
+	    (format-room-guest-access& event))
+	   ((string= type "m.room.name")
+	    (format-room-name& event))
+	   ((string= type "m.room.power_levels")
+	    (format-room-power-levels& event))
+	   ((string= type "m.room.join_rules")
+	    (format-room-join-rules& event))
+	   ((string= type "m.room.avatar")
+	    (format-room-avatar event))
+     	   
+	   ((string= (subseq type 0 7) "m.call.")
+	    (format-call-events event))
+	   ((string= type "m.room.create")
+	    (format-room-create event))
+	   ((preview-url-p type)
+	    (format-room-preview-url event))
+	   (t 
+	    "this message type has not been implemented"))))
 
 (defun preview-url-p (type)
   (let ((strstrt (search "room.preview_urls" type)))

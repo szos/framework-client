@@ -161,18 +161,56 @@ therin."
 				  ("account-data" . ,account-data))))))
 
 (defun send-json (url content &rest key-plist)
-  (eval `(let ((stream (http-request ,url
-				     :want-stream t
-				     :method :post
-				     :content-type "application/json"
-				     :content ,content
-				     :additional-headers
-				     `(("Authorization" . ,(concatenate 'string "Bearer "
-									*session-user-auth*)))
-				     ,@key-plist)))
-	   
-	   ;; (get-json-from-stream stream :utf-8 :alist)
-	   (yason:parse stream :object-as :alist))))
+  (if key-plist
+      (let ((stream (drakma:http-request url
+					 :want-stream t
+					 :method :post
+					 :content-type "application/json"
+					 :content content
+					 :additional-headers
+					 `(("Authorization" . ,(concatenate 'string "Bearer "
+									    *session-user-auth*)))
+					 key-plist)))
+	
+	;; (get-json-from-stream stream :utf-8 :alist)
+	(yason:parse stream :object-as :alist))
+      (let ((stream (drakma:http-request url
+					 :want-stream t
+					 :method :post
+					 :content-type "application/json"
+					 :content content
+					 :additional-headers
+					 `(("Authorization" . ,(concatenate 'string "Bearer "
+									    *session-user-auth*))))))
+	
+	;; (get-json-from-stream stream :utf-8 :alist)
+	(yason:parse stream :object-as :alist))))
+
+(defmacro send-json-macro-style (url content &rest key-plist)
+  (if key-plist
+      `(let ((stream (drakma:http-request ,url
+					  :want-stream t
+					  :method :post
+					  :content-type "application/json"
+					  :content ,content
+					  :additional-headers
+					  `(("Authorization" . ,(concatenate 'string "Bearer "
+									     *session-user-auth*)))
+					  ,@key-plist)))
+	 
+	 ;; (get-json-from-stream stream :utf-8 :alist)
+	 (yason:parse stream :object-as :alist))
+      `(let ((stream (drakma:http-request ,url
+					  :want-stream t
+					  :method :post
+					  :content-type "application/json"
+					  :content ,content
+					  :additional-headers
+					  `(("Authorization" . ,(concatenate 'string "Bearer "
+									     *session-user-auth*))))))
+	 
+	 ;; (get-json-from-stream stream :utf-8 :alist)
+	 (yason:parse stream :object-as :alist))))
 
 (defun recieve-json (url)
   (let ((stream (drakma:http-request url

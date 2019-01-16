@@ -3,8 +3,9 @@
 ;;; this file is for holding our custom repl.
 
 (defparameter *allowed-commands*
-  '(logout smart-login initialize quit exit grab-single-room view-room inspect-room-state list-rooms
-    exit-test-repl print-commands))
+  '(logout initialize quit exit grab-single-room view-room inspect-room-state list-rooms
+    exit-test-repl print-commands view-room*
+    ))
 
 (defun print-commands (&optional (commands *allowed-commands*))
   (loop for command in commands
@@ -63,6 +64,13 @@
 (defun test-eval (form)
   (cond ((member (car form) *permitted-variables*)
 	 (eval (car form)))
+	((and (member (car form) *allowed-commands*) (eq (car form) 'view-room)
+	      (not (stringp (second form))))
+	 (let ((room-name ""))
+	   (loop for sym in (rest form)
+	      do (setf room-name (cat room-name " " (format nil "~A" sym))))
+	   ;; (eval (cons (car form) (subseq room-name 1)))
+	   (eval (list (car form) (subseq room-name 1)))))
 	((member (car form) *allowed-commands*)
 	 (eval form))
 	(t
@@ -97,6 +105,9 @@
   (when value (princ value))
   (terpri))
 
+(defun room-name->id (name)
+  (cdr (assoc name *room-name->id* :test #'string=)))
+
 (defun view-room (&rest name)
   "displays a rooms formatted list of messages. the name can be a symbol or a string. 
 eventually we will have to work in some sort of syntax... perhaps command arg arg arg...
@@ -118,15 +129,25 @@ main eval statement, or perhaps just spliced in..."
        (parse-timeline-events
 	(get-events-from-timeline (get-timeline-from-room (grab-single-room (car name))))))
       (setf name (let ((room-name ""))
-		 (mapcar #'(lambda (name-as-symbol)
-			     (setf room-name (cat room-name (symbol-name name-as-symbol))))
-			 name)
-		 (print room-name)
-		 room-name))))
+		   (mapcar #'(lambda (name-as-symbol)
+			       (setf room-name (cat room-name (symbol-name name-as-symbol))))
+			   name)
+		   (print room-name)
+		   room-name))))
+
+(defun view-room* (name)
+  "name should be a string. it returns a list of
+events that have been formatted. "
+  (parse-timeline-events
+   (get-events-from-timeline (get-timeline-from-room (grab-single-room name)))))
 
 (defun set-up-rooms ()
+  (print "Syncing rooms...")
   (initialize)
   ())
+
+(defun send-message-to (room-name message)
+  (send-message-to-room (room-name->id room-name) message))
 
 (defun print-timeline (name)
   "this is a duplicate of view-room..."
@@ -143,6 +164,21 @@ within the state. it then formats and prints those events. "
 				    (cdr (grab-single-room name))
 				    :test #'string=))
 	       :test #'string=))))
+
+(defun send-message-to-room (room-id message)
+  "this can be implemented using dynamic scope! we define a dynamic variable
+*current-room*, and on the first call enter a room, we wrap it all in a let,
+which sets *current-room* to the room thats being visited/watched. this works
+because dynamic variables and lexical scope are preserved through function 
+calls, so we can just 'let' it in the first function call, and dont have to 
+worry about it for anything below there, as each call will have no effect. 
+see the parameter *test-val* and the associated functions at the bottom of
+this file.  this lets us not send the room in the function call, via a 
+&optional \(room *current-room*\)  "
+  (let ((url (cat *homeserver* "_matrix/client/r0/rooms/"
+		  room-id "/send/m.room.message?"))
+	(content (format nil "{\"msgtype\":\"m.text\", \"body\":~S}" message)))
+    (send-json-macro-style url content)))
 
 ;; (defun inspect-room-state (name)
 ;;   (display-room-events-list
@@ -212,16 +248,7 @@ otherwise poll for update again.")
 (defun expand-room-history (room-name/id)
   "this will use the rooms previous batch token to retrieve more messages. 
 it adds them to the room store, in the appropriate place, and ")
-(defun send-message-to-room (room message)
-  "this can be implemented using dynamic scope! we define a dynamic variable
-*current-room*, and on the first call enter a room, we wrap it all in a let,
-which sets *current-room* to the room thats being visited/watched. this works
-because dynamic variables and lexical scope are preserved through function 
-calls, so we can just 'let' it in the first function call, and dont have to 
-worry about it for anything below there, as each call will have no effect. 
-see the parameter *test-val* and the associated functions at the bottom of
-this file.  this lets us not send the room in the function call, via a 
-&optional \(room *current-room*\)  ")
+
 (defun create-room ())
 (defun invite-user-to-room (user &optional (room *current-room*)))
 ;(defun )
